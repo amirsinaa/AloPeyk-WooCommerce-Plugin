@@ -262,6 +262,7 @@ class Alopeyk_WooCommerce_Shipping_Common {
 				'You have not confirmed your location yet.'      => esc_html__( 'You have not confirmed your location yet.',  'alopeyk-shipping-for-woocommerce' ),
 				'Select Your Location'      					 => esc_html__( 'Select Your Location',  					  'alopeyk-shipping-for-woocommerce' ),
 				'Place order'      								 => esc_html__( 'Place order',  					  		  'alopeyk-shipping-for-woocommerce' ),
+				'No address found.'      						 => esc_html__( 'No address found.',  			  		  'alopeyk-shipping-for-woocommerce' ),
 			),
 			'dynamic_parts' => $this->get_dynamic_parts( is_admin() ),
 			'refresh_interval' => is_admin() ? self::ADMIN_REFRESH_INTERVAL : self::FRONT_REFRESH_INTERVAL,
@@ -1778,8 +1779,8 @@ class Alopeyk_WooCommerce_Shipping_Common {
 						$shipping_info[$apiResponse->transport_type]['final_price'] = $final_price;
 						$shipping_info[$apiResponse->transport_type]['discount']    = $discount;
 						if ( isset( $discount ) && ! $discount && isset( $invalid_discount ) && $invalid_discount ) {
-							if( isset( $$invalid_discount[0]->error_msg ) )
-								$shipping_info[$apiResponse->transport_type]['discount_coupons_error_msg'] = $$invalid_discount[0]->error_msg;
+							if( isset( $invalid_discount[0]->error_msg ) )
+								$shipping_info[$apiResponse->transport_type]['discount_coupons_error_msg'] = $invalid_discount[0]->error_msg;
 						}
 					}
 				}
