@@ -220,7 +220,7 @@
 				destinationLatInput = $j( alopeyk.wcshm.public.vars.maps.destinationLatInput ),
 				destinationLngInput = $j( alopeyk.wcshm.public.vars.maps.destinationLngInput );
 
-			if ( navigator.geolocation && map && destinationLatInput.length && destinationLngInput.length && ( forceRelocation || ( ! destinationLatInput.val().length && ! destinationLngInput.val().length ) || ( destinationLatInput.val() == alopeyk.wcshm.public.vars.maps.defaultCenter.lat && destinationngInput.val() == alopeyk.wcshm.public.vars.maps.defaultCenter.lng ) ) ) {
+			if ( navigator.geolocation && map && destinationLatInput.length && destinationLngInput.length && ( forceRelocation || ( ! destinationLatInput.val().length && ! destinationLngInput.val().length ) || ( destinationLatInput.val() == alopeyk.wcshm.public.vars.maps.defaultCenter.lat && destinationLngInput.val() == alopeyk.wcshm.public.vars.maps.defaultCenter.lng ) ) ) {
 
 				navigator.geolocation.getCurrentPosition ( function ( position ) {
 
@@ -252,6 +252,12 @@
             var markerMoved = false;
     var allowFormSubmission = false;
 			var initialize = function () {
+
+				// A genuinely prefilled saved address (returning customer) already counts
+				// as a confirmed location, so it must not be blocked at place-order time.
+				if ( destinationLatInput.val().length && destinationLngInput.val().length ) {
+					markerMoved = true;
+				}
 
 				var mapMarkerImageUrl  = alopeyk.wcshm.public.vars.common.info.alopeyk.wcshm.map.marker,
 
@@ -309,12 +315,29 @@
 						src   : mapMarkerImageUrl,
 						class : alopeyk.wcshm.public.fn.addPrefix ( alopeyk.wcshm.public.vars.maps.mapMarkerIconClass )
 
+					}),
+
+					destinationLocatorStatus = $j( '<div/>' ).attr ({
+
+						class          : alopeyk.wcshm.public.fn.addPrefix ( 'destination-locator-status' ),
+						role           : 'status',
+						'aria-live'    : 'polite'
+
 					});
+
+				// Accessibility: expose the search field / results list as a combobox.
+				destinationAutocompleteInput.attr ({
+					role             : 'combobox',
+					'aria-autocomplete' : 'list',
+					'aria-expanded'  : 'false'
+				});
+				autoCompleteList.attr ( 'role', 'listbox' );
 
 				destinationAutocompleteInputWrapper
 				.insertAfter ( destinationAddressInput )
 				.append ( destinationAutocompleteInput )
-				.append ( autoCompleteList );
+				.append ( autoCompleteList )
+				.append ( destinationLocatorStatus );
 
 				mapCanvas.insertAfter( destinationAutocompleteInputWrapper );
 				mapContainer.insertAfter( mapCanvas );
@@ -359,6 +382,26 @@
 
 					},
 
+					setLocatorStatus = function ( message, isError ) {
+
+						var errorClass = alopeyk.wcshm.public.fn.addPrefix ( 'destination-locator-status-error' );
+
+						destinationLocatorStatus
+						.text ( message || '' )
+						.toggleClass ( errorClass, !! ( message && isError ) )
+						.toggle ( !! message );
+
+					},
+
+					// A location counts as "confirmed" once the customer has actively
+					// positioned it — by dragging the pin, picking a search result, using
+					// the locate-me button, or arriving with a prefilled saved address.
+					confirmLocation = function () {
+
+						markerMoved = true;
+
+					},
+
 					fetchAddressFromLocation = function () {
 
 						if ( alopeyk.wcshm.public.vars.maps.fetchAddressConnection ) {
@@ -378,25 +421,39 @@
 
 						}, function ( response ) {
 
-              destinationAutocompleteInput.on('mousedown touchstart', function(event) {     
-                if ($j(this).val() !== '') {
-                    $j(this).val(''); 
-                }
-            });
-
-
 							if ( response ) {
 
 								autoCompleteList.empty();
-								destinationAutocompleteInput.val ( response.data.address );
-								$j(document).trigger("update_checkout");
 
-								if ( $j( '.' + wcAddAlopeyk ).length ) {
+								var isServiceable = !! response.success,
+									address       = response.data && response.data.address ? response.data.address : '';
 
-									var address = response.success ? response.data.address : '';
-									destinationAddressInput.val ( address );
+								if ( isServiceable ) {
+
+									destinationAutocompleteInput.val ( address );
+									setLocatorStatus ( '' );
+
+									if ( $j( '.' + wcAddAlopeyk ).length ) {
+										destinationAddressInput.val ( address );
+									}
+
+								} else {
+
+									// Out-of-service point: keep the field clear rather than
+									// injecting the error text as if it were a real address,
+									// and surface the message inline instead.
+									destinationAutocompleteInput.val ( '' );
+									setLocatorStatus ( address, true );
+
+									if ( $j( '.' + wcAddAlopeyk ).length ) {
+										destinationAddressInput.val ( '' );
+									}
 
 								}
+
+								// The authoritative checkout revalidation is driven by this
+								// change event ( change -> saveData -> set_session -> update_checkout ),
+								// so we no longer trigger a premature, pre-session update_checkout here.
 								destinationAddressInput.trigger ( 'change' );
 
 							}
@@ -624,64 +681,77 @@
 
 				}
 				
-                    map.on('dragend', function () {
-                        markerMoved = true;
-                       //console.log("Marker moved!"); 
-                    });
-                
-                    $j(document).on('click', '#place_order', function (e) {
-                        if (!markerMoved) {
-                            e.preventDefault(); 
-                    
-                            var popup = $j('<div>', {
-                                id: 'awcshm-map-popup',
-                                class: 'awcshm-map-popup'
-                            }).append(
-                                $j('<div>', {
-                                    class: 'awcshm-map-popup-content'
-                                }).append(
-                                    $j('<p>').text('لطفاً موقعیت مکانی خود را روی نقشه مشخص نمایید.'),
-                                    $j('<button>', {
-                                        id: 'close-popup',
-                                        text: 'متوجه شدم'
-                                    })
-                                )
-                            );
-                    
-                            $j('body').append(popup);
-                    
-                            $j('#awcshm-map-popup').fadeIn();
-                    
-                            $j('html, body').animate({
-                                scrollTop: $j('.awcshm-map-container').offset().top - 100
-                            }, 1000, function () {  
-                                $j('.awcshm-map-container').addClass('awcshm-map-highlight');
-                    
-                                setTimeout(function () {
-                                    $j('.awcshm-map-container').removeClass('awcshm-map-highlight');
-                                }, 5000); 
-                            });
-                    
-                            $j(document).on('click', '#close-popup', function () {
-                                $j('#awcshm-map-popup').fadeOut(function () {
-                                    $j(this).remove(); 
-                                });
-                            });
-                    
-                            $j(document).on('click', '#map-popup', function (e) {
-                                if (e.target === this) {
-                                    $j('#awcshm-map-popup').fadeOut(function () {
-                                        $j(this).remove(); 
-                                    });
-                                }
-                            });
-                    
-                            return false; 
-                        }
-                    });
+				// Dragging the pin confirms the location.
+				map.on ( 'dragend', function () {
+					confirmLocation();
+				});
 
+				// Popup dismiss handlers are delegated and bound once, so repeated
+				// place-order attempts never stack duplicate handlers. The backdrop
+				// selector matches the real element id ( #awcshm-map-popup ).
+				var closeLocationPopup = function () {
+					$j( '#awcshm-map-popup' ).fadeOut ( function () {
+						$j( this ).remove();
+					});
+				};
 
-				map.on ( 'move dragend zoomend', function () {
+				$j( document )
+				.on ( 'click', '#awcshm-map-popup #close-popup', closeLocationPopup )
+				.on ( 'click', '#awcshm-map-popup', function ( e ) {
+					if ( e.target === this ) {
+						closeLocationPopup();
+					}
+				});
+
+				$j( document ).on ( 'click', '#place_order', function ( e ) {
+
+					if ( ! markerMoved ) {
+
+						e.preventDefault();
+
+						if ( ! $j( '#awcshm-map-popup' ).length ) {
+
+							var popup = $j( '<div>', {
+								id    : 'awcshm-map-popup',
+								class : 'awcshm-map-popup'
+							}).append(
+								$j( '<div>', {
+									class : 'awcshm-map-popup-content'
+								}).append(
+									$j( '<p>' ).text ( alopeyk.wcshm.public.fn.translate ( 'You have not confirmed your location yet.' ) ),
+									$j( '<button>', {
+										type : 'button',
+										id   : 'close-popup',
+										text : alopeyk.wcshm.public.fn.translate ( 'OK' )
+									})
+								)
+							);
+
+							$j( 'body' ).append ( popup );
+
+						}
+
+						$j( '#awcshm-map-popup' ).fadeIn();
+
+						$j( 'html, body' ).animate ({
+							scrollTop : $j( '.awcshm-map-container' ).offset().top - 100
+						}, 1000, function () {
+							$j( '.awcshm-map-container' ).addClass ( 'awcshm-map-highlight' );
+							setTimeout ( function () {
+								$j( '.awcshm-map-container' ).removeClass ( 'awcshm-map-highlight' );
+							}, 5000 );
+						});
+
+						return false;
+
+					}
+
+				});
+
+				// Use moveend ( fires once when panning settles ) instead of the
+				// continuously-firing move event to avoid a flood of change events
+				// and redundant reverse-geocode / revalidation calls during a drag.
+				map.on ( 'moveend zoomend', function () {
 
 					destinationLatInput.val ( map.getCenter().lat );
 					destinationLngInput.val ( map.getCenter().lng ).trigger ( 'change' );
@@ -764,6 +834,7 @@
 						if ( alopeyk.wcshm.public.vars.maps.autocompleteInputValue != destinationAutocompleteInput.val()  ) {
 
 							autoCompleteList.empty();
+							destinationAutocompleteInput.attr ( 'aria-expanded', 'false' );
 							alopeyk.wcshm.public.vars.maps.autocompleteInputValue = destinationAutocompleteInput.val();
 
 							if ( alopeyk.wcshm.public.vars.maps.autocompleteKeyupTimeout ) {
@@ -774,6 +845,11 @@
 
 								if ( alopeyk.wcshm.public.vars.maps.autocompleteConnection ) {
 									alopeyk.wcshm.public.vars.maps.autocompleteConnection.abort();
+								}
+
+								// Skip the request entirely for an empty query.
+								if ( ! $j.trim ( destinationAutocompleteInput.val() ).length ) {
+									return;
 								}
 
 								destinationAutocompleteInputWrapper.addClass ( alopeyk.wcshm.public.vars.common.loadingClass );
@@ -803,6 +879,7 @@
 												resultItem   = $j( '<li>' )
 												.addClass( alopeyk.wcshm.public.fn.addPrefix ( alopeyk.wcshm.public.vars.maps.destinationLocatorAutocompleteResultClass ) )
 												.attr ( 'title', itemAddress )
+												.attr ( 'role', 'option' )
 												.data ({
 													city     : itemCity,
 													address  : itemAddress,
@@ -826,11 +903,15 @@
 														destinationLngInput.val ( location.lng );
 														alopeyk.wcshm.public.vars.maps.autocompleteInputValue = address;
 
+														// Picking a search result is an explicit location confirmation.
+														confirmLocation();
 														fetchAddressFromLocation();
 
 													},
 
-													'hover' : function () {
+													// jQuery has no 'hover' event; use mouseenter so the
+													// keyboard-highlight state actually syncs on pointer hover.
+													'mouseenter' : function () {
 
 														setActiveAutocompleteItem ( $j( this ).index() );
 
@@ -841,6 +922,19 @@
 											autoCompleteList.append ( resultItem );
 
 										}
+
+										destinationAutocompleteInput.attr ( 'aria-expanded', 'true' );
+
+									} else if ( response ) {
+
+										// Explicit empty state instead of a silent, blank list.
+										autoCompleteList.append (
+											$j( '<li>' )
+											.addClass ( alopeyk.wcshm.public.fn.addPrefix ( alopeyk.wcshm.public.vars.maps.destinationLocatorAutocompleteResultClass ) )
+											.addClass ( alopeyk.wcshm.public.fn.addPrefix ( 'destination-locator-autocomplete-empty' ) )
+											.text ( alopeyk.wcshm.public.fn.translate ( 'No address found.' ) )
+										);
+										destinationAutocompleteInput.attr ( 'aria-expanded', 'true' );
 
 									}
 
@@ -858,8 +952,24 @@
 
 				});
 
-				destinationLocatorCta.on ( 'click', function () {
+				// Clear the search field on first tap/click so the customer can type
+				// a fresh query. Bound once here ( previously it was re-bound inside
+				// every reverse-geocode callback, which stacked duplicate handlers ).
+				destinationAutocompleteInput.on ( 'mousedown touchstart', function () {
+					if ( $j( this ).val() !== '' ) {
+						$j( this ).val ( '' );
+					}
+				});
 
+				destinationLocatorCta
+				.attr ({
+					title            : alopeyk.wcshm.public.fn.translate ( 'Select Your Location' ),
+					'aria-label'     : alopeyk.wcshm.public.fn.translate ( 'Select Your Location' )
+				})
+				.on ( 'click', function () {
+
+					// Using the locate-me button is an explicit location confirmation.
+					confirmLocation();
 					alopeyk.wcshm.public.fn.setCurrentGeolocation ( true );
 
 				});
