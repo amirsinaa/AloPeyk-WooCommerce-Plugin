@@ -4,7 +4,7 @@ Contributors: alopeyk
 Tags: shipping, shipping method, woocommerce
 Requires at least: 5.3
 Tested up to: 6.7
-Stable tag: 4.5.2                                                                                                                                                                                                   
+Stable tag: 4.5.3
 Requires PHP: 7.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -100,6 +100,12 @@ Alopeyk (https://alopeyk.com “Alopeyk On-demand Delivery”)** پیشروتر�
 4. Plugin main settings
 
 == Changelog ==
+
+= 4.5.3 =
+* بهبود : بهبود تجربه کاربری نقشه در مرحله تسویه حساب (جستجو، تعامل با نقشه و بروزرسانی قیمت)
+* رفع : حل مشکل تشخیص موقعیت مکانی خودکار روی نقشه
+* رفع : جلوگیری از مسدود شدن ثبت سفارش هنگام انتخاب آدرس از جستجو یا دکمه موقعیت‌یابی
+* رفع : رفع مشکل بسته نشدن پیام تایید موقعیت و بارگذاری نشدن نسخه بهینه‌سازی‌شده اسکریپت
 
 = 4.5.2 =
 * بروزرسانی : اضافه شدن نمابش هزینه سفارش با تخفیف  در صفحه سفارشات الوپیک
