@@ -1752,13 +1752,13 @@ class Alopeyk_WooCommerce_Shipping_Common {
 						continue;
 					}
 
-					$price             = isset( $apiResponse->price )             ? is_null( $apiResponse->price )             ? null : 10 * $apiResponse->price             : null;
-					$price_with_return = isset( $apiResponse->price_with_return ) ? is_null( $apiResponse->price_with_return ) ? null : 10 * $apiResponse->price_with_return : null;
-					$final_price       = isset( $apiResponse->final_price )       ? is_null( $apiResponse->final_price )       ? null : 10 * $apiResponse->final_price       : null;
+					$price             = isset( $apiResponse->price )             ? ( is_null( $apiResponse->price )             ? null : 10 * $apiResponse->price )             : null;
+					$price_with_return = isset( $apiResponse->price_with_return ) ? ( is_null( $apiResponse->price_with_return ) ? null : 10 * $apiResponse->price_with_return ) : null;
+					$final_price       = isset( $apiResponse->final_price )       ? ( is_null( $apiResponse->final_price )       ? null : 10 * $apiResponse->final_price )       : null;
 					$discount          = ( isset( $apiResponse->discount ) && ! is_null( $apiResponse->discount ) ) ? ( $apiResponse->discount > 0 ? 10 * $apiResponse->discount : null ) : null;
 					$score             = $is_frontend ? null : (isset( $apiResponse->score ) ? $apiResponse->score : null);
 					$cost              = $is_frontend ? ( $has_return ? $price_with_return : $price ) : $price;
-					$invalid_discount  = isset( $apiResponse->invalid_discount_coupons ) ? is_null( $apiResponse->invalid_discount_coupons ) ? null : $apiResponse->invalid_discount_coupons : null;
+					$invalid_discount  = isset( $apiResponse->invalid_discount_coupons ) ? ( is_null( $apiResponse->invalid_discount_coupons ) ? null : $apiResponse->invalid_discount_coupons ) : null;
 					$cost_details = array(
 						'price'             => $price,
 						'price_with_return' => $price_with_return,
