@@ -4,7 +4,7 @@ Contributors: alopeyk
 Tags: shipping, shipping method, woocommerce
 Requires at least: 5.3
 Tested up to: 6.7
-Stable tag: 4.5.4
+Stable tag: 4.5.5
 Requires PHP: 7.0
 License: GPLv3 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -100,6 +100,9 @@ Alopeyk (https://alopeyk.com “Alopeyk On-demand Delivery”)** پیشروتر�
 4. Plugin main settings
 
 == Changelog ==
+
+= 4.5.5 =
+* رفع : رفع مشکل خراب شدن پاسخ‌های AJAX (بروزرسانی افزونه‌ها، ورود با رمز یکبار مصرف و…) که به دلیل چاپ مستقیم پیام «کاربر API» در خروجی رخ می‌داد
 
 = 4.5.4 =
 * رفع : رفع خطای مرگبار (Fatal error) در PHP 8 به بعد ناشی از عملگر سه‌تایی تودرتوی بدون پرانتز و سازگاری کامل با PHP 8.1 تا 8.3

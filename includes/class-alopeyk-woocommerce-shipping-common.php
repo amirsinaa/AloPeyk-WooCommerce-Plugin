@@ -3327,7 +3327,11 @@ class Alopeyk_WooCommerce_Shipping_Common {
 		if ( isset( $userData->customer->is_api ) && $userData->customer->is_api ) {
 			return true;
 		}
-		echo wp_kses(
+		// Return the notice markup so callers can render it in the right place.
+		// This must never echo: it is reachable during admin-ajax.php requests
+		// (plugin updates, OTP login, etc.) where any stray output corrupts the
+		// JSON response body.
+		return wp_kses(
 			sprintf(
 				/* translators: %1$s: Url Form */
 				esc_html__('Contact %1$s to become an API user and unlock the premium features for free.', 'alopeyk-shipping-for-woocommerce'),
@@ -3340,7 +3344,6 @@ class Alopeyk_WooCommerce_Shipping_Common {
 				),
 			)
 		);
-		return false;
 	}
 	/**
 	 * @since  1.7.0
